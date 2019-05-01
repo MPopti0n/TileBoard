@@ -798,7 +798,7 @@ function MainController ($scope, $location) {
    };
 
    $scope.openLightSliders = function (item, entity) {
-      if(!item.sliders || !item.sliders.length) return;
+      if((!item.sliders || !item.sliders.length) && !item.colorpicker) return;
 
       if(entity.state !== "on") {
          return $scope.toggleSwitch(item, entity, function () {
@@ -1145,6 +1145,46 @@ function MainController ($scope, $location) {
          }
       });
    };
+
+   $scope.getRGBStringFromArray = function( color ) {
+      if(!color) return null;
+      return "rgb(" + color[0] + "," + color[1] + "," + color[2] + ")";
+   };
+
+   $scope.getRGBArrayFromString = function( color ) {
+      if(!color || color.indexOf("rgb") !== 0) return null;
+
+      var colorValues;
+
+      if (color.indexOf("rgba") === 0) {
+         colorValues = color.substring(color.indexOf("(") + 1, color.lastIndexOf(",")).split(",");
+      }
+      else {
+         colorValues = color.substring(color.indexOf("(") + 1, color.indexOf(")")).split(",");
+      }
+
+      return [parseInt(colorValues[0]), parseInt(colorValues[1]), parseInt(colorValues[2])];
+   };
+
+   $scope.setLightColor = function (item, color) {
+      if(item.loading) return;
+
+      var colors = $scope.getRGBArrayFromString(color);
+
+      if(colors) sendItemData(item, {
+         type: "call_service",
+         domain: "light",
+         service: "turn_on",
+         service_data: {
+            entity_id: item.id,
+            rgb_color: colors
+         }
+      });
+   };   
+
+   $scope.$on('colorpicker-colorupdated', function (event, data) {
+      $scope.setLightColor(data.item, data.color);
+   });
 
    $scope.setInputNumber = function (item, value) {
       if(item.loading) return;
